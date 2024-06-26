@@ -4,7 +4,7 @@
 #include <TimeLib.h>
 
 const int numSensores = 1; // Se ajustará según la implementación y documentación
-const int sensores[numSensores] = {2};
+const int sensores[numSensores] = {2}; //pines conectados
 int estadoSensores[numSensores];
 int estadoAnteriorSensores[numSensores];
 int lugaresLibres = numSensores; // Valor inicial equivalente al número de cajones (se asume que todos están libres inicialmente)
@@ -13,12 +13,12 @@ int lugaresOcupados = 0; // Valor inicial
 void setup() {
   Serial.begin(9600);
   // Configurar la hora inicial: Año, Mes, Día, Hora, Minuto, Segundo
-  setTime(16, 45, 00, 15, 06, 2024); // 16:45:00 del 15 de junio de 2024
+  setTime(16, 45, 00, 15, 06, 2024); // 16:45:00 del 15 de junio de 2024. (ajustar) <---------!!!!!!!!!
 
   // Ciclo for para establecer los pines de los sensores como input
   for (int i = 0; i < numSensores; i++) { 
     pinMode(sensores[i], INPUT);
-    estadoSensores[i] = digitalRead(sensores[i]); // Se asume que HIGH es libre
+    estadoSensores[i] = digitalRead(sensores[i]); // Se asume que HIGH es libre (verificar) <-------!!!!!!!
     estadoAnteriorSensores[i] = estadoSensores[i];
   }
 }
