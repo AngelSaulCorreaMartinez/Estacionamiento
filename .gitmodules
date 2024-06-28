@@ -1,0 +1,3 @@
+[submodule "camara_conteo_cajones/yolov5"]
+	path = camara_conteo_cajones/yolov5
+	url = https://github.com/ultralytics/yolov5.git
