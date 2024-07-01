@@ -5,10 +5,10 @@ from datetime import datetime
 # Definir las regiones de interés (ROIs) para los cajones de estacionamiento
 # Estas coordenadas deben ser ajustadas visualmente
 parking_spots = [
-    [47, 211, 241, 560],   # Cajón 1
-    [522, 289, 901, 811],  # Cajón 2
-    [1132, 487, 1664, 889],# Cajón 3
-    [1634, 261, 1861, 454],# Cajón 4
+    [19, 29, 614, 688],   # Cajón 1
+    [857, 12, 1118, 628],  # Cajón 2
+    [1687, 210, 1902, 637],# Cajón 3
+    [759, 769, 1074, 1049],# Cajón 4
 ]
 
 # Cargar el modelo YOLOv5 preentrenado
