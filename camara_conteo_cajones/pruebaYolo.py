@@ -8,7 +8,7 @@ def connect_db():
     try:
         connection = mysql.connector.connect(
             host='localhost',  # Cambia esto si tu servidor no está en localhost
-            database='parkingdb',  # Nombre de tu base de datos
+            database='parking',  # Nombre de tu base de datos
             user='root',  # Tu usuario de MySQL
             password=''  # Tu contraseña de MySQL
         )
@@ -19,17 +19,17 @@ def connect_db():
         print("Error al conectar a la base de datos", e)
         return None
 
-def insert_parking_record(connection, nivel, cajon, hora_entrada):
+def insert_parking_record(connection, cajon, nivel, hora_entrada):
     cursor = connection.cursor()
-    query = "INSERT INTO individual (Nivel, Cajon, Hora_Entrada) VALUES (%s, %s, %s)"
-    cursor.execute(query, (nivel, cajon, hora_entrada))
+    query = "INSERT INTO niveles (id_Cajon, Hora_Entrada, N_Nivel) VALUES (%s, %s, %s)"
+    cursor.execute(query, (cajon, hora_entrada, nivel))  # 1 significa que está ocupado
     connection.commit()
     return cursor.lastrowid
 
-def update_parking_record(connection, id_record, hora_salida):
+def update_parking_record(connection, cajon, hora_salida, nivel, tiempo_transcurrido):
     cursor = connection.cursor()
-    query = "UPDATE individual SET Hora_Salida = %s WHERE ID = %s"
-    cursor.execute(query, (hora_salida, id_record))
+    query = "UPDATE niveles SET Hora_Salida = %s, Tiempo_Transcurrido = %s WHERE id_Cajon = %s AND N_Nivel = %s AND Hora_Salida IS NULL"
+    cursor.execute(query, (hora_salida, tiempo_transcurrido, cajon, nivel))  # 0 significa que está desocupado
     connection.commit()
 
 # Definir las regiones de interés (ROIs) para los cajones de estacionamiento
@@ -37,8 +37,8 @@ def update_parking_record(connection, id_record, hora_salida):
 parking_spots = [
     [40, 30, 221, 124],   # Cajón 1
     [452, 36, 583, 118],  # Cajón 2
-    [20, 201, 259, 321],# Cajón 3
-    [446, 232, 651, 360],# Cajón 4
+    [20, 201, 259, 321],  # Cajón 3
+    [446, 232, 651, 360], # Cajón 4
 ]
 
 # Cargar el modelo YOLOv5 preentrenado
@@ -96,7 +96,7 @@ while True:
                         if not parking_status[idx]:  # Si el cajón estaba desocupado
                             parking_status[idx] = True
                             parking_times[idx] = datetime.now()
-                            record_ids[idx] = insert_parking_record(connection, 'N1', idx + 1, parking_times[idx])
+                            record_ids[idx] = insert_parking_record(connection, idx+1, 'N1', parking_times[idx])
                             print(f'Cajón {idx+1} ocupado a las {parking_times[idx]}')
                         
                         cv2.putText(frame, "Ocupado", (spot[0], spot[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
@@ -108,7 +108,7 @@ while True:
             parking_status[idx] = False
             leaving_times[idx] = datetime.now()
             time_spent = leaving_times[idx] - parking_times[idx]
-            update_parking_record(connection, record_ids[idx], leaving_times[idx])
+            update_parking_record(connection, idx + 1, leaving_times[idx], 'N1', time_spent)
             print(f'Cajón {idx+1} desocupado a las {leaving_times[idx]}. Tiempo ocupado: {time_spent}')
     
     # Mostrar la imagen con las detecciones y ROIs
