@@ -2,6 +2,8 @@ import torch
 import cv2
 from datetime import datetime
 
+
+
 # Definir las regiones de interés (ROIs) para los cajones de estacionamiento
 # Estas coordenadas deben ser ajustadas visualmente
 parking_spots = [
@@ -63,6 +65,7 @@ while True:
                             parking_status[idx] = True
                             parking_times[idx] = datetime.now()
                             print(f'Cajón {idx+1} ocupado a las {parking_times[idx]}')
+                            #AQUI SE MANDA EL CAJON OCUPADO Y LA HORA idx+1, parking_times[idx]
                         
                         cv2.putText(frame, "Ocupado", (spot[0], spot[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
                         cv2.rectangle(frame, (spot[0], spot[1]), (spot[2], spot[3]), (0, 0, 255), 2)
@@ -74,7 +77,9 @@ while True:
             leaving_times[idx] = datetime.now()
             time_spent = leaving_times[idx] - parking_times[idx]
             print(f'Cajón {idx+1} desocupado a las {leaving_times[idx]}. Tiempo ocupado: {time_spent}')
-    
+            #AQUI SE MANDA O ACTUALIZA A CAJON DESOCUPADO (TIEMPO DE SALIDA, TIEMPO DE ESTANCIA DONDE EL CAJON ES idx+1 y tiempo de salida es null)
+            #leaving_times[idx], time_spent, idx+1
+
     # Mostrar la imagen con las detecciones y ROIs
     cv2.imshow('YOLOv5 Parking Detection', frame)
 
