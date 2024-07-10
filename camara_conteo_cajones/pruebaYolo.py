@@ -1,9 +1,9 @@
 import torch
 import cv2
+import threading
 from datetime import datetime
 
 # Definir las regiones de interés (ROIs) para los cajones de estacionamiento
-# Estas coordenadas deben ser ajustadas visualmente
 parking_spots = [
     [19, 29, 614, 688],   # Cajón 1
     [857, 12, 1118, 628],  # Cajón 2
@@ -11,8 +11,18 @@ parking_spots = [
     [759, 769, 1074, 1049],# Cajón 4
 ]
 
-# Cargar el modelo YOLOv5 preentrenado
-model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
+# Verificar si la GPU está disponible
+if torch.backends.mps.is_available():
+    device = torch.device('mps')
+elif torch.cuda.is_available():
+    device = torch.device('cuda')
+else:
+    device = torch.device('cpu')
+
+print(f'Usando el dispositivo: {device}')
+
+# Cargar el modelo YOLOv5 preentrenado y moverlo al dispositivo
+model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True).to(device).eval()
 
 # Definir el índice de la clase "car" en COCO
 CAR_CLASS_ID = 2
@@ -22,19 +32,69 @@ parking_status = [False] * len(parking_spots)
 parking_times = [None] * len(parking_spots)
 leaving_times = [None] * len(parking_spots)
 
-# Leer la imagen desde la cámara
-cap = cv2.VideoCapture(0)
+# URL RTSP de tu cámara con usuario y contraseña
+usuario = "admin"
+contraseña = "Estacionamiento2"
+direccion_ip = "169.254.10.144"
+puerto_rtsp = "554"
+
+# Formato de la URL RTSP
+rtsp_url = f"rtsp://{usuario}:{contraseña}@{direccion_ip}:{puerto_rtsp}/Streaming/Channels/102"
+
+# Inicializar la captura de video
+cap = cv2.VideoCapture(rtsp_url)
+
+# Verificar si la cámara RTSP está abierta
+if not cap.isOpened():
+    print("Error al abrir la cámara RTSP.")
+    exit()
+
+# Establecer la resolución de entrada para reducir la carga de procesamiento
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+
+# Configurar el frame rate
+cap.set(cv2.CAP_PROP_FPS, 15)
+
+# Variable para almacenar el último frame capturado
+latest_frame = None
+lock = threading.Lock()
+
+def capture_frames():
+    global latest_frame
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print("Error al leer el frame de la cámara.")
+            break
+        with lock:
+            latest_frame = frame
+
+# Iniciar el hilo de captura de frames
+threading.Thread(target=capture_frames, daemon=True).start()
 
 while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
+    with lock:
+        frame = latest_frame
+
+    if frame is None:
+        continue
+
+    # Redimensionar el frame para procesamiento más rápido
+    frame_resized = cv2.resize(frame, (640, 480))
+
+    # Convertir la imagen a RGB y luego a tensor, y mover al dispositivo
+    img = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2RGB)
+    img = torch.from_numpy(img).to(device).float() / 255.0  # Normalizar la imagen
+    img = img.permute(2, 0, 1).unsqueeze(0)  # cambiar a formato de PyTorch y añadir dimensión de batch
 
     # Realizar la detección
-    results = model(frame)
-    
-    # Obtener los resultados de las detecciones
-    labels, coords = results.xyxyn[0][:, -1], results.xyxyn[0][:, :-1]
+    with torch.no_grad():
+        results = model(img)[0]
+
+    # Obtener los resultados de las detecciones y moverlos de vuelta a la CPU
+    labels = results[:, -1].cpu()
+    coords = results[:, :-1].cpu()
 
     # Dibujar las ROIs de los cajones de estacionamiento
     for idx, spot in enumerate(parking_spots):
