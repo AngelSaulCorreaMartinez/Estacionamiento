@@ -1,14 +1,17 @@
 import torch
 import cv2
-from datetime import datetime
+from datetime import datetime 
 
 # Definir las regiones de interés (ROIs) para los cajones de estacionamiento
 # Estas coordenadas deben ser ajustadas visualmente
 parking_spots = [
-    [19, 29, 614, 688],   # Cajón 1
-    [857, 12, 1118, 628],  # Cajón 2
-    [1687, 210, 1902, 637],# Cajón 3
-    [759, 769, 1074, 1049],# Cajón 4
+    [22, 398, 37, 407],   # Cajón 1
+    [292, 448, 315, 455],  # Cajón 2
+    [527, 455, 544, 466],# Cajón 3
+    [295, 312, 309, 314],
+    [182, 293, 195, 299],
+    [406, 311, 424, 320],
+    [508, 316, 521, 319]
 ]
 
 # Cargar el modelo YOLOv5 preentrenado
